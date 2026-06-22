@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(mkdir -p site/app site/components site/lib site/public)",
+      "Bash(cp -R logos site/public/logos)",
+      "Bash(cp -R assets site/public/assets)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000/work)",
+      "Bash(curl -s http://localhost:3000/work/pijar)",
+      "Bash(curl -s http://localhost:3000/work/legion)",
+      "Bash(curl -s http://localhost:3000/about)",
+      "Bash(curl -s http://localhost:3000/contact)",
+      "Bash(pkill -f \"next start\")",
+      "Bash(pkill -f \"next-server\")",
+      "Bash(npx vercel *)",
+      "Bash(node -e \"console.log\\('next', require\\('next/package.json'\\).version\\)\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://rafiandraportfolio.vercel.app)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://rafiandraportfolio.vercel.app/work/ocx)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app/work/idds)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app/work/ocx)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app/work/legion)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app/work/pijar)",
+      "Bash(curl -s https://rafiandraportfolio.vercel.app/contact)"
+    ]
+  }
+}
