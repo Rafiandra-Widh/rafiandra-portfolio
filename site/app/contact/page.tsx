@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { contacts, contactEmail } from "@/lib/data";
+import { contacts } from "@/lib/data";
 
 const fieldStyle: React.CSSProperties = {
   fontFamily: "inherit", fontSize: 15, color: "var(--text)", background: "var(--bg)",
@@ -12,7 +12,10 @@ export default function ContactPage() {
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const msgRef = useRef<HTMLTextAreaElement>(null);
+  const trapRef = useRef<HTMLInputElement>(null);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   const markFilled = (e: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const f = e.currentTarget;
@@ -21,31 +24,41 @@ export default function ContactPage() {
     f.style.background = on ? "var(--surface)" : "var(--bg)";
   };
 
-  const submitForm = (e: React.FormEvent) => {
+  const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sending || sent) return;
     const name = (nameRef.current?.value || "").trim();
     const email = (emailRef.current?.value || "").trim();
-    const msg = (msgRef.current?.value || "").trim();
-    const subject = "[" + (email || "Someone") + "] has reached out to you!";
-    const bodyLines: string[] = [];
-    bodyLines.push((email || "Someone") + " has reached out to you!");
-    bodyLines.push("");
-    if (name) bodyLines.push("Name: " + name);
-    if (email) bodyLines.push("Email: " + email);
-    bodyLines.push("");
-    bodyLines.push(msg || "(no message)");
-    const body = bodyLines.join("\n");
-    const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${contactEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    try {
-      const w = window.open(gmail, "_blank", "noopener");
-      if (!w) window.location.href = mailto;
-    } catch {
-      try {
-        window.location.href = mailto;
-      } catch {}
+    const message = (msgRef.current?.value || "").trim();
+    const company = (trapRef.current?.value || "").trim(); // honeypot
+
+    setError("");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setError("Please enter a valid email.");
+      return;
     }
-    setSent(true);
+    if (!message) {
+      setError("Please include a message.");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message, company }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Could not send right now. Please try again.");
+      }
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -92,14 +105,23 @@ export default function ContactPage() {
               <label style={{ fontSize: 13, color: "var(--muted)" }}>What are you building?</label>
               <textarea ref={msgRef} data-cursor="1" rows={4} placeholder="A sentence or two about the problem…" onInput={markFilled} className="field" style={{ ...fieldStyle, resize: "vertical" }} />
             </div>
+            {/* Honeypot — hidden from real users; bots that fill it are dropped. */}
+            <input
+              ref={trapRef} type="text" name="company" tabIndex={-1} autoComplete="off"
+              aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+            />
+            {error && (
+              <p role="alert" style={{ fontSize: 13, color: "#e5484d", margin: 0 }}>{error}</p>
+            )}
             <button
-              data-cursor="1" data-magnet type="submit" className="btn-accent"
+              data-cursor="1" data-magnet type="submit" className="btn-accent" disabled={sending || sent}
               style={{
                 marginTop: 4, background: "var(--accent-grad)", color: "var(--accent-ink)", border: "none",
-                padding: "15px 24px", borderRadius: 100, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer",
+                padding: "15px 24px", borderRadius: 100, fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+                cursor: sending || sent ? "default" : "pointer", opacity: sending ? 0.7 : 1,
               }}
             >
-              {sent ? "Thanks — I’ll be in touch ✓" : "Send message →"}
+              {sent ? "Thanks — I’ll be in touch ✓" : sending ? "Sending…" : "Send message →"}
             </button>
           </form>
         </div>
